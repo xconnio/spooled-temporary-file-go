@@ -1,8 +1,10 @@
 package spooledtempfile
 
 import (
+	"errors"
 	"io"
 	"io/fs"
+	"os"
 )
 
 type SpooledTemporaryFile struct {
@@ -34,24 +36,64 @@ func NewSpooledTemporaryFile(maxSize int, buffer []byte) *SpooledTemporaryFile {
 // may directly create a file if the size of the provided buffer
 // is larger than the max allowed size.
 func (s *SpooledTemporaryFile) Write(bytes []byte) (int, error) {
-	return 0, nil
+	if s.rolledOver {
+		return 0, errors.New("file has been rolled over, cannot write more")
+	}
+
+	if s.sizeWrote+len(bytes) > s.sizeMax {
+		if err := s.Rollover(); err != nil {
+			return 0, err
+		}
+	}
+
+	bytesWritten := copy(s.buffer[s.sizeWrote:], bytes)
+	s.sizeWrote += bytesWritten
+
+	return bytesWritten, nil
 }
 
 // Read copies the content of the internal buffer OR the file into
 // the provided buffer.
 func (s *SpooledTemporaryFile) Read(bytes []byte) (int, error) {
-	return 0, nil
+	if s.rolledOver {
+		return s.file.Read(bytes)
+	}
+
+	n := copy(bytes, s.buffer)
+	return n, nil
 }
 
 // Close will close the underlying file object. It is NOOP
 // when the buffer is still in-memory.
 func (s *SpooledTemporaryFile) Close() error {
+	if s.rolledOver && s.file != nil {
+		return s.file.Close()
+	}
 	return nil
 }
 
 // Rollover will write the buffer to file even if its
 // smaller than sizeMax.
 func (s *SpooledTemporaryFile) Rollover() error {
+	if s.rolledOver {
+		return nil
+	}
+
+	file, err := os.CreateTemp("", "spooled_temp_file")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(file.Name())
+
+	_, err = file.Write(s.buffer[:s.sizeWrote])
+	if err != nil {
+		return err
+	}
+
+	s.file = file
 	s.rolledOver = true
+
+	s.buffer = nil
+
 	return nil
 }
