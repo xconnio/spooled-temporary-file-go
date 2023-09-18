@@ -1,9 +1,7 @@
 package spooledtempfile
 
 import (
-	"errors"
 	"io"
-	"io/fs"
 	"os"
 )
 
@@ -18,7 +16,7 @@ type SpooledTemporaryFile struct {
 	// rolledOver keeps track if the content was dumped to file.
 	rolledOver bool
 	buffer     []byte
-	file       fs.File
+	file       *os.File
 
 	io.Reader
 	io.Writer
@@ -37,7 +35,7 @@ func NewSpooledTemporaryFile(maxSize int, buffer []byte) *SpooledTemporaryFile {
 // is larger than the max allowed size.
 func (s *SpooledTemporaryFile) Write(bytes []byte) (int, error) {
 	if s.rolledOver {
-		return 0, errors.New("file has been rolled over, cannot write more")
+		return s.file.Write(bytes)
 	}
 
 	if s.sizeWrote+len(bytes) > s.sizeMax {
