@@ -40,14 +40,14 @@ func (s *SpooledTemporaryFile) Write(bytes []byte) (int, error) {
 
 	if s.sizeWrote+len(bytes) > s.sizeMax {
 		if err := s.Rollover(); err != nil {
-			return 0, err
+			return len(bytes), err
 		}
 	}
 
-	bytesWritten := copy(s.buffer[s.sizeWrote:], bytes)
-	s.sizeWrote += bytesWritten
+	s.buffer = append(s.buffer, bytes...)
+	s.sizeWrote += len(bytes)
 
-	return bytesWritten, nil
+	return len(bytes), nil
 }
 
 // Read copies the content of the internal buffer OR the file into
