@@ -1,6 +1,7 @@
 package spooledtempfile
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,4 +25,20 @@ func TestSpooledTemporaryFile_Write(t *testing.T) {
 
 	// Check that it's rolled over after reaching the max size.
 	assert.True(t, stf.rolledOver)
+}
+
+func TestSpooledTemporaryFile_Read(t *testing.T) {
+	stf := NewSpooledTemporaryFile(1024, nil)
+
+	data := []byte("Hello World!")
+
+	_, err := stf.Write(data)
+	require.NoError(t, err)
+
+	readBuffer := make([]byte, len(data))
+
+	n, err := stf.Read(readBuffer)
+	require.NoError(t, err)
+	require.Equal(t, len(data), n)
+	require.Equal(t, data, readBuffer)
 }
