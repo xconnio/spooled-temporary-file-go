@@ -1,11 +1,11 @@
 package spooledtempfile_test
 
 import (
-	"github.com/stretchr/testify/require"
-	spooledtempfile "github.com/xconnio/spooled-temporary-file"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/xconnio/spooled-temporary-file"
 )
 
 func TestSpooledTemporaryFile_Write(t *testing.T) {
@@ -21,7 +21,7 @@ func TestSpooledTemporaryFile_Write(t *testing.T) {
 
 	// Attempt to write more than the max size.
 	testData = []byte("This is too much data!")
-	n, err = stf.Write(testData)
+	n, _ = stf.Write(testData)
 	assert.Equal(t, len(testData), n)
 
 	// Check that it's rolled over after reaching the max size.
