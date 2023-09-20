@@ -95,3 +95,11 @@ func (s *SpooledTemporaryFile) Rollover() error {
 
 	return nil
 }
+
+func (s *SpooledTemporaryFile) SizeWrote() int {
+	return s.sizeWrote
+}
+
+func (s *SpooledTemporaryFile) RolledOver() bool {
+	return s.rolledOver
+}
