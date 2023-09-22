@@ -1,7 +1,6 @@
 package spooledtempfile
 
 import (
-	"io"
 	"os"
 )
 
@@ -17,10 +16,6 @@ type SpooledTemporaryFile struct {
 	rolledOver bool
 	buffer     []byte
 	file       *os.File
-
-	io.Reader
-	io.Writer
-	io.Closer
 }
 
 func NewSpooledTemporaryFile(maxSize int, buffer []byte) *SpooledTemporaryFile {
@@ -40,8 +35,10 @@ func (s *SpooledTemporaryFile) Write(bytes []byte) (int, error) {
 
 	if s.sizeWrote+len(bytes) > s.sizeMax {
 		if err := s.Rollover(); err != nil {
-			return len(bytes), err
+			return 0, err
 		}
+
+		return s.file.Write(bytes)
 	}
 
 	s.buffer = append(s.buffer, bytes...)
@@ -61,12 +58,12 @@ func (s *SpooledTemporaryFile) Read(bytes []byte) (int, error) {
 	return n, nil
 }
 
-// Close will close the underlying file object. It is NOOP
-// when the buffer is still in-memory.
-func (s *SpooledTemporaryFile) Close() error {
-	if s.rolledOver && s.file != nil {
-		return s.file.Close()
+func (s *SpooledTemporaryFile) Done() error {
+	if s.file != nil {
+		_, err := s.file.Seek(0, 0)
+		return err
 	}
+
 	return nil
 }
 
@@ -81,11 +78,12 @@ func (s *SpooledTemporaryFile) Rollover() error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(file.Name())
 
-	_, err = file.Write(s.buffer[:s.sizeWrote])
-	if err != nil {
-		return err
+	if s.sizeWrote > 0 {
+		_, err = file.Write(s.buffer[:s.sizeWrote])
+		if err != nil {
+			return err
+		}
 	}
 
 	s.file = file

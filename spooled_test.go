@@ -1,6 +1,7 @@
 package spooledtempfile_test
 
 import (
+	"crypto/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,6 +27,24 @@ func TestSpooledTemporaryFile_Write(t *testing.T) {
 
 	// Check that it's rolled over after reaching the max size.
 	assert.True(t, stf.RolledOver())
+}
+
+func TestSpooledTemporaryFile_WriteLarge(t *testing.T) {
+	stf := spooledtempfile.NewSpooledTemporaryFile(30, nil)
+	data := make([]byte, 50)
+	n, err := rand.Read(data)
+	require.NoError(t, err)
+	require.Equal(t, 50, n)
+
+	n, err = stf.Write(data)
+	require.NoError(t, err)
+	require.Equal(t, 50, n)
+	require.NoError(t, stf.Done())
+
+	newData := make([]byte, 50)
+	n, err = stf.Read(newData)
+	require.NoError(t, err)
+	require.Equal(t, 50, n)
 }
 
 func TestSpooledTemporaryFile_Read(t *testing.T) {
