@@ -66,11 +66,11 @@ func TestSpooledTemporaryFile_Read(t *testing.T) {
 func TestSpooledTemporaryFile_Rollover(t *testing.T) {
 	stf := spooledtempfile.NewSpooledTemporaryFile(30, nil)
 	data := make([]byte, 30)
-	n, err := stf.Write(data)
+	_, err := stf.Write(data)
 	assert.False(t, stf.RolledOver())
 
 	data = make([]byte, 1)
-	n, err = stf.Write(data)
+	n, _ := stf.Write(data)
 
 	require.NoError(t, err)
 	require.Equal(t, 1, n)
