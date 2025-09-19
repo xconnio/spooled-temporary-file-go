@@ -6,7 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/xconnio/spooled-temporary-file"
+
+	"github.com/xconnio/spooled-temporary-file-go"
 )
 
 func TestSpooledTemporaryFile_Write(t *testing.T) {

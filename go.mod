@@ -1,4 +1,4 @@
-module github.com/xconnio/spooled-temporary-file
+module github.com/xconnio/spooled-temporary-file-go
 
 go 1.19
 
