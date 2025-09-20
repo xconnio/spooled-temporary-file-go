@@ -1,6 +1,7 @@
 package spooledtempfile
 
 import (
+	"io"
 	"os"
 )
 
@@ -16,6 +17,7 @@ type SpooledTemporaryFile struct {
 	rolledOver bool
 	buffer     []byte
 	file       *os.File
+	readOffset int
 }
 
 func NewSpooledTemporaryFile(maxSize int, buffer []byte) *SpooledTemporaryFile {
@@ -54,7 +56,12 @@ func (s *SpooledTemporaryFile) Read(bytes []byte) (int, error) {
 		return s.file.Read(bytes)
 	}
 
-	n := copy(bytes, s.buffer)
+	if s.readOffset >= len(s.buffer) {
+		return 0, io.EOF
+	}
+
+	n := copy(bytes, s.buffer[s.readOffset:])
+	s.readOffset += n
 	return n, nil
 }
 
@@ -63,7 +70,7 @@ func (s *SpooledTemporaryFile) Done() error {
 		_, err := s.file.Seek(0, 0)
 		return err
 	}
-
+	s.readOffset = 0
 	return nil
 }
 
@@ -90,6 +97,7 @@ func (s *SpooledTemporaryFile) Rollover() error {
 	s.rolledOver = true
 
 	s.buffer = nil
+	s.readOffset = 0
 
 	return nil
 }
